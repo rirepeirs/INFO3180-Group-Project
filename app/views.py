@@ -12,7 +12,7 @@ from flask_login import login_user, logout_user, current_user, login_required
 from sqlalchemy import func
 from werkzeug.utils import secure_filename
 from app.models import User, Profile, Favourite
-# from app.forms import RegisterForm, LoginForm, ProfileForm #Uncomment when forms are created
+from app.forms import RegisterForm, LoginForm, ProfileForm 
 from werkzeug.security import check_password_hash
 
 

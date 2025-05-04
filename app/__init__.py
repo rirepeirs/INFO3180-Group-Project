@@ -3,9 +3,13 @@ from .config import Config
 from flask_login import LoginManager
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate 
+# CORS
+from flask_cors import CORS
 
 app = Flask(__name__)
 app.config.from_object(Config)
+
+CORS(app, origins=["http://localhost:5173"])
 
 db = SQLAlchemy(app)
 # Instantiate Flask-Migrate library here

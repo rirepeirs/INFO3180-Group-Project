@@ -44,7 +44,7 @@ class Profile(db.Model):
     __tablename__ = 'profiles'
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    user_id_fk = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     description = db.Column(db.String(250), nullable=False)
     parish = db.Column(db.String(100), nullable=False)
     biography = db.Column(db.String(180), nullable=False) #db.text
@@ -66,7 +66,7 @@ class Profile(db.Model):
                  race, birth_year, height, fav_cuisine,
                  fav_colour, fav_school_subject, political,
                  religious, family_oriented):
-        self.user_id = user_id
+        self.user_id_fk = user_id
         self.description = description
         self.parish = parish
         self.biography = biography

@@ -52,8 +52,8 @@
         </div>
   
         <div>
-          <label>Height (in meters):</label>
-          <input type="number" step="0.01" v-model.number="profile.height" required />
+          <label for="height">Height (cm)</label>
+          <input type="number" id="height" v-model="profile.height" min="100" max="300" step="1" class="form-control" required/>
         </div>
   
         <div>
@@ -80,16 +80,6 @@
         <div class="checkbox-group">
           <label><input type="checkbox" v-model="profile.family_oriented" /> Family Oriented</label>
         </div>
-  
-        <div>
-          <label>Upload Photo:</label>
-          <input
-            type="file"
-            accept="image/jpeg, image/png, image/webp"
-            @change="handleFileUpload"
-          />
-        </div>
-  
         <button type="submit">Create Profile</button>
         <p v-if="error" class="error">{{ error }}</p>
         <p v-if="success" class="success">{{ success }}</p>
@@ -97,9 +87,9 @@
     </div>
   </template>
   
-  <script setup>
+<script setup>
   import { reactive, ref, computed } from 'vue';
-  import axios from '@/axios'; // Ensure axios instance is configured
+  import axios from '@/axios'; 
   import { useRouter } from 'vue-router';
   
   const router = useRouter();
@@ -120,22 +110,8 @@
     family_oriented: false
   });
   
-  const photo = ref(null);
   const error = ref('');
   const success = ref('');
-  
-  function handleFileUpload(event) {
-    const file = event.target.files[0];
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
-  
-    if (file && allowedTypes.includes(file.type)) {
-      photo.value = file;
-      error.value = '';
-    } else {
-      error.value = 'Only JPG, PNG, or WEBP image formats are allowed.';
-      photo.value = null;
-    }
-  }
   
   const parishes = [
     'Kingston', 'St. Andrew', 'St. Thomas', 'Portland', 'St. Mary',
@@ -152,43 +128,51 @@
     return years;
   });
   
+
+  console.log("Sending profile data:", profile);
+
   const submitProfile = async () => {
-    error.value = '';
-    success.value = '';
-  
-    try {
-      const token = localStorage.getItem('token');
-      const formData = new FormData();
-  
-      for (const key in profile) {
-        formData.append(key, profile[key]);
+  error.value = '';
+  success.value = '';
+
+  try {
+    const token = localStorage.getItem('token');
+    console.log("Sending profile data:", profile);
+
+    console.log("About to send profile data:", JSON.stringify(profile, null, 2));
+    const response = await axios.post('/api/profiles', profile, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
       }
-  
-      if (photo.value) {
-        formData.append('photo', photo.value);
+    });
+
+    success.value = 'Profile successfully created!';
+    Object.keys(profile).forEach(key => {
+      profile[key] = typeof profile[key] === 'boolean' ? false : '';
+    });
+    router.push('/profiles/${profile_id}');
+  } catch (err) {
+    console.error("Server response:", err.response?.data);
+    
+    if (err.response) {
+      const status = err.response.status;
+      const msg = err.response.data.msg;
+
+      if (status === 401 && msg === 'Token has expired') {
+        alert('Your session has expired. Please log in again.');
+        localStorage.removeItem('token');
+        router.push('/login');  
+      } else {
+        error.value = msg || 'Something went wrong.';
       }
-  
-      const response = await axios.post('/api/profiles', formData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data'
-        }
-      });
-  
-      success.value = 'Profile successfully created!';
-  
-      // Reset form
-      Object.keys(profile).forEach(key => {
-        profile[key] = typeof profile[key] === 'boolean' ? false : '';
-      });
-      photo.value = null;
-  
-      router.push('/my-profile');
-    } catch (err) {
-      error.value = err.response?.data?.message || 'Something went wrong.';
+    } else {
+      error.value = 'Network error or server is unreachable.';
     }
-  };
-  </script>
+  }
+};
+</script>
+  
   
   <style scoped>
   .add-profile-container {

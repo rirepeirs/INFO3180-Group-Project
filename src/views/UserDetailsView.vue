@@ -1,17 +1,20 @@
 <template>
   <div class="user-details" v-if="user">
-    <!-- Display user info -->
-    <img :src="user.photo" alt="User photo" class="user-photo" />
-    <h2 class="full-name">{{ user.name }}</h2>
-    <p class="username">@{{ user.username }}</p>
-    <p><strong>Email:</strong> {{ user.email }}</p>
-    <p><strong>Date Joined:</strong> {{ user.date_joined }}</p>
+    <div class="user-header">
+      <img :src="`http://localhost:8080/uploads/${user.photo}`" alt="User photo" class="user-photo" />
+      <div class="user-info">
+        <h2 class="full-name">{{ user.name }}</h2>
+        <p class="username">@{{ user.username }}</p>
+        <p><strong>Email:</strong> {{ user.email }}</p>
+        <p><strong>Date Joined:</strong> {{ formatDate(user.date_joined) }}</p>
+      </div>
+    </div>
 
     <hr class="my-4" />
 
     <!-- Display associated profiles as cards -->
-    <div v-if="user.profiles && user.profiles.length > 0" class="profiles-cards-container">
-      <h3>Profiles:</h3>
+    <div v-if="user?.profiles && user.profiles.length > 0" class="profiles-cards-container">
+      <h3 class="profile-title">Profiles</h3>
       <div class="profiles-grid">
         <ProfileCard
           v-for="profile in user.profiles"
@@ -21,57 +24,71 @@
       </div>
     </div>
     <p v-else>No profiles available.</p>
-  </div>
 
+    <div class="add-profile-container">
+      <button @click="goToAddProfile" class="add-profile-btn">
+        Add Profile
+      </button>
+    </div>
+
+  </div>
   <div v-else>
     <p>Loading user details...</p>
   </div>
 </template>
 
-<script>
-import axios from 'axios';
-import ProfileCard from '../components/ProfileCard.vue';  // Import ProfileCard component
 
-export default {
-  name: 'UserDetailsView',
-  components: {
-    ProfileCard
-  },
-  props: {
-    userId: {
-      type: Number,
-      required: true
-    }
-  },
-  data() {
-    return {
-      user: null
-    };
-  },
-  mounted() {
-    this.fetchUser();
-  },
-  methods: {
-    async fetchUser() {
-      try {
-        const response = await axios.get(`/api/users/${this.userId}`);
-        this.user = response.data;
-      } catch (error) {
-        console.error('Failed to load user details:', error);
-      }
-    }
+
+<script setup>
+import { onMounted, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import apiClient from '@/axios'
+import ProfileCard from '../components/ProfileCard.vue'
+
+const user = ref(null)
+const route = useRoute()
+const router = useRouter()
+const userId = Number(route.params.user_id)
+
+onMounted(async () => {
+  try {
+    const response = await apiClient.get(`/api/users/${userId}`) 
+    user.value = response.data.user
+  } catch (error) {
+    console.error('Failed to load user details:', error)
   }
-};
+})
+
+function formatDate(isoDate) {
+  const options = { year: 'numeric', month: 'long', day: 'numeric' };
+  return new Date(isoDate).toLocaleDateString(undefined, options);
+}
+
+function goToAddProfile() {
+  router.push({ name: 'AddProfile' })
+}
 </script>
 
 <style scoped>
+
 .user-details {
   max-width: 900px;
-  margin: 0 auto;
+  margin: 2rem auto;
   padding: 2rem;
   background: #f9f9f9;
   border-radius: 16px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.user-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.user-info {
+  flex: 1;
 }
 
 .user-photo {
@@ -79,7 +96,6 @@ export default {
   height: 140px;
   border-radius: 50%;
   object-fit: cover;
-  margin-bottom: 1rem;
 }
 
 .full-name {
@@ -91,16 +107,74 @@ export default {
   color: #555;
   margin-bottom: 1rem;
 }
-
-.profiles-cards-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1.5rem;
+.profiles-title {
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
 }
+.add-profile-container {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1.5rem;
+}
+
+.add-profile-btn {
+  background-color: #70815b;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.add-profile-btn:hover {
+  background-color: #c7baa2;
+}
+
 
 .profiles-grid {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   gap: 1.5rem;
-}
+} 
 </style>
+
+<!-- //
+// import axios from 'axios';
+// import ProfileCard from '../components/ProfileCard.vue';  // Import ProfileCard component
+
+// export default {
+//   name: 'UserDetailsView',
+//   components: {
+//     ProfileCard
+//   },
+//   props: {
+//     userId: {
+//       type: Number,
+//       required: true
+//     }
+//   },
+//   data() {
+//     return {
+//       user: null
+//     };
+//   },
+//   mounted() {
+//     console.log("User ID received:", this.userId);
+//     this.fetchUser();
+//   },
+//   methods: {
+//     async fetchUser() {
+//       try {
+//         const response = await axios.get(`/api/users/${this.userId}`);
+//         console.log("API response:", response.data);
+//         this.user = response.data;
+//       } catch (error) {
+//         console.error('Failed to load user details:', error);
+//       }
+//     }
+//   }
+// };
+// </script> -->

@@ -1,6 +1,6 @@
 <template>
     <div class="profile-card">
-      <img :src="profile.user.photo" alt="Profile photo" class="profile-photo" />
+      <img v-if="profile.user && profile.user.photo" :src="`http://localhost:8080/uploads/${profile.user.photo}`" alt="Profile photo" class="profile-photo"/>
   
       <div class="profile-info">
         <h4 class="profile-name">{{ profile.name }}</h4>
@@ -21,8 +21,8 @@
       }
     },
     methods: {
-      viewProfile(profileId) {
-        this.$router.push(`/profiles/${profileId}`);
+      viewProfile(profile_id) {
+        this.$router.push(`/profiles/${profile_id}`); 
       }
     }
   };

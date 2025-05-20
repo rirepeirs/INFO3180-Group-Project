@@ -2,8 +2,9 @@ from . import db
 from datetime import datetime, timezone
 from werkzeug.security import generate_password_hash
 from werkzeug.security import check_password_hash
+from flask_login import UserMixin
 
-class User(db.Model):
+class User(db.Model, UserMixin):
     """Represents a registered user in the system."""
     __tablename__ = 'users'
 
@@ -37,6 +38,16 @@ class User(db.Model):
 
     def __repr__(self):
         return f"<User {self.username}>"
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'username': self.username,
+            'name': self.name,
+            'email': self.email,
+            'photo': self.photo,
+            'date_joined': self.date_joined.isoformat() if self.date_joined else None
+        }
 
 
 class Profile(db.Model):
@@ -51,7 +62,7 @@ class Profile(db.Model):
     sex = db.Column(db.String(10), nullable=False)  # M/F/O
     race = db.Column(db.String(64), nullable=False)
     birth_year = db.Column(db.Integer, nullable=False)
-    height = db.Column(db.Float, nullable=False)
+    height = db.Column(db.Integer, nullable=False)
     fav_cuisine = db.Column(db.String(100), nullable=False)
     fav_colour = db.Column(db.String(50), nullable=False)
     fav_school_subject = db.Column(db.String(100), nullable=False)
@@ -62,11 +73,11 @@ class Profile(db.Model):
     # Relationship back to user
     user = db.relationship('User', back_populates='profiles')
 
-    def __init__(self, user_id, description, parish, biography, sex,
+    def __init__(self, user_id_fk, description, parish, biography, sex,
                  race, birth_year, height, fav_cuisine,
                  fav_colour, fav_school_subject, political,
                  religious, family_oriented):
-        self.user_id_fk = user_id
+        self.user_id_fk = user_id_fk
         self.description = description
         self.parish = parish
         self.biography = biography
@@ -83,6 +94,25 @@ class Profile(db.Model):
 
     def __repr__(self):
         return f"<Profile for User ID {self.user_id}>"
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'description': self.description,
+            'parish': self.parish,
+            'biography': self.biography,
+            'sex': self.sex,
+            'race': self.race,
+            'birth_year': self.birth_year,
+            'height': self.height,
+            'fav_cuisine': self.fav_cuisine,
+            'fav_colour': self.fav_colour,
+            'fav_school_subject': self.fav_school_subject,
+            'political': self.political,
+            'religious': self.religious,
+            'family_oriented': self.family_oriented
+        }
+
 
 class Favourite(db.Model):
     """Represents a user's favourite relationship with another user."""

@@ -23,8 +23,9 @@
     </div>
   </template>
   
-  <script>
+<script>
   import apiClient from '@/axios'
+  import { login } from '@/auth'
   
   export default {
     name: 'LoginView',
@@ -37,21 +38,24 @@
     },
     methods: {
       async loginUser() {
+
+
         try {
-          const response = await apiClient.post('/auth/login', {
+          const response = await apiClient.post('/api/auth/login', {
             username: this.username,
             password: this.password
           })
   
-          const token = response.data.token
-          if (token) {
-            localStorage.setItem('token', token)
-            this.$router.push('/')
+          const token = response.data.token;
+          const user = response.data.user;
+          if (token && user?.id) {
+            localStorage.setItem('userId', user.id);
+            login(token)
+            this.$router.push('/search')
           } else {
-            this.error = 'No token received from server.'
+            this.error = 'Invalid login response'
           }
         } catch (err) {
-          // Handle both general and detailed Flask-WTF error messages
           this.error =
             err.response?.data?.errors?.[0] ||
             err.response?.data?.error ||
@@ -60,7 +64,7 @@
       }
     }
   }
-  </script>
+</script>
   
   <style scoped>
   .login-container {

@@ -17,7 +17,7 @@
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
           <!-- Left side navigation items -->
           <ul class="navbar-nav me-auto">
-            <li class="nav-item">
+            <li class="nav-item" v-if="!isLoggedIn">
               <RouterLink to="/" class="nav-link" :class="{ active: $route.path === '/' }">Home</RouterLink>
             </li>
             <li class="nav-item">
@@ -27,10 +27,10 @@
             <!-- Additional navigation items for logged-in users -->
             <template v-if="isLoggedIn">
               <li class="nav-item">
-                <RouterLink to="/profiles" class="nav-link" :class="{ active: $route.path === '/profiles' }">Search</RouterLink>
+                <RouterLink to="/search" class="nav-link" :class="{ active: $route.path === '/search' }">Search</RouterLink>
               </li>
               <li class="nav-item">
-                <RouterLink to="/myprofile" class="nav-link" :class="{ active: $route.path === '/myprofile' }">My Profile</RouterLink>
+                <RouterLink :to="`/users/${userId}`" class="nav-link" :class="{ active: $route.path.startsWith('/users')}">My Profile</RouterLink>
               </li>
               <li class="nav-item dropdown">
                 <a class="nav-link dropdown-toggle" href="#" id="reportsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -59,31 +59,25 @@
   </header>
 </template>
 
-<script setup>
-import { RouterLink } from 'vue-router';
-import { ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router'; // Optional: to programmatically navigate after logout
+<script setup >
+import { RouterLink, useRouter, useRoute } from 'vue-router'
+import { isLoggedIn, logout as doLogout } from '@/auth'
+import { ref, onMounted } from 'vue'
 
-// This should be replaced with your actual authentication state management
-const isLoggedIn = ref(false);
+const router = useRouter()
+const userId = ref(localStorage.getItem('userId'));
 
-// Check authentication status on component mount
 onMounted(() => {
-  // Check if the user is logged in (e.g., checking for a token in localStorage or using a Vuex store)
-  const token = localStorage.getItem('authToken'); // Assuming you store token in localStorage
-  isLoggedIn.value = !!token; // If token exists, user is logged in
-});
+  const storedId = localStorage.getItem('userId')
+  if (storedId) {
+    userId.value = storedId
+  }
+})
 
-// Logout function
 const logout = () => {
-  // Perform logout actions (e.g., remove token, reset state, etc.)
-  localStorage.removeItem('authToken'); // Remove token from localStorage
-  isLoggedIn.value = false; // Update login state
-
-  // Optionally, redirect the user to the home or login page
-  const router = useRouter();
-  router.push('/login');
-};
+  doLogout()
+  router.push('/login')
+}
 </script>
 
 <style scoped>

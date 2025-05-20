@@ -6,6 +6,7 @@ import UserDetailsView from '@/views/UserDetailsView.vue';
 import ProfileDetailsView from '@/views/ProfileDetailsView.vue';
 import AddProfileView from '@/views/AddProfileView.vue';
 import FavouritesView from '@/views/FavouritesView.vue';
+import SearchView from '@/views/SearchView.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -36,22 +37,28 @@ const router = createRouter({
     {
       path:'/users/:user_id',
       name: 'UserDetails',
-      Component: UserDetailsView
+      component: UserDetailsView,
+      props: route => ({ userId: Number(route.params.user_id) })
     },
     {
       path:'/profiles/:profile_id',
-      name: 'PorfileDetails',
-      Component: ProfileDetailsView
+      name: 'ProfileDetails',
+      component: ProfileDetailsView
     },
     {
       path:'/profiles/new',
       name: 'AddProfile',
-      Component: AddProfileView
+      component: AddProfileView
     },
     {
-      path:'/profiles/favourites',
+      path:'/profiles/yourfavourites',
       name: 'Favourites',
-      Component: FavouritesView
+      component: FavouritesView
+    },
+    {
+      path: '/search',
+      name: 'Search',
+      component: SearchView
     }   
   ]
 })

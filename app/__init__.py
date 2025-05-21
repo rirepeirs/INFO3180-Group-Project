@@ -17,7 +17,7 @@ jwt = JWTManager(app)
 CORS(app, origins=os.getenv("ALLOWED_ORIGINS"))
 
 db = SQLAlchemy(app)
-# Instantiate Flask-Migrate library here
+
 migrate = Migrate(app, db) 
 
 # Flask-Login login manager

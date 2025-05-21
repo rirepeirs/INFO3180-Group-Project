@@ -22,7 +22,7 @@ apiClient.interceptors.response.use(
   error => {
     if (error.response && error.response.status === 401) {
       localStorage.removeItem('token');
-      window.location.href = '/login'; // or router.push('/login') if using Vue Router
+      window.location.href = '/login'; 
     }
     return Promise.reject(error);
   }

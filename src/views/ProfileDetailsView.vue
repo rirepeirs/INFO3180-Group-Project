@@ -28,10 +28,12 @@
         <button v-if="viewerId !== profile.user_id_fk" @click="toggleFavourite" class="btn">
           {{ isFavourited ? 'Favourited' : 'Favourite' }}
         </button>
-
-        <button v-else @click="goToMatches" class="btn">
-          Matches
+        <button v-if="viewerId !== profile.user_id_fk" class="btn btn--email">
+          Email
         </button>
+          <router-link v-if="viewerId == profile.user_id_fk" :to="{ name: 'MatchesView', query: { profile_id: profile.id } }" class="btn">
+            See Matches
+          </router-link>
       </div>
     
     </div>
@@ -57,6 +59,11 @@ onMounted(async () => {
     viewerId.value = parseInt(res.data.viewer_id)
     const currentUserRes = await apiClient.get(`/api/users/${profile.value.user_id_fk}`)
     currentUser.value = currentUserRes.data.user
+
+    const favRes = await apiClient.get(`/api/favourites`);
+    if (favRes.status === 200 && favRes.data.favourites) {
+      isFavourited.value = favRes.data.favourites.some(fav => fav.id === profile.value.user_id_fk);
+    }
   } catch (err) {
     console.error('Error fetching profile:', err)
   }
@@ -67,13 +74,13 @@ const toggleFavourite = async () => {
     const url = `/api/profiles/${profile.value.user_id_fk}/favourite`
     if (isFavourited.value) {
       // Unfavourite
-      const res = await apiClient.delete(url)
+      const res = await apiClient.delete(`/api/profiles/${profile.value.user_id_fk}/favourite`)
       if (res.status === 200) {
         isFavourited.value = false
       }
     } else {
       // Favourite
-      const res = await apiClient.post(url)
+      const res = await apiClient.post(`/api/profiles/${profile.value.user_id_fk}/favourite`)
       if (res.status === 200 || res.status === 201) {
         isFavourited.value = true
       }
@@ -132,4 +139,10 @@ img {
 .btn:hover {
   background-color: #c7baa2;
 }
+.btn--email{
+  background-color: #70815b;
+  color: #f9f9f9;
+  margin-left: 10px;
+}
+
 </style>

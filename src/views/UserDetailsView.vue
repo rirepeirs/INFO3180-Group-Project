@@ -1,7 +1,11 @@
 <template>
   <div class="user-details" v-if="user">
     <div class="user-header">
-      <img :src="`http://localhost:8080/uploads/${user.photo}`" alt="User photo" class="user-photo" />
+      <img
+        :src="user.photo ? `http://localhost:8080/uploads/${user.photo}` : '/default-user.png'"
+        alt="User photo"
+        class="user-photo"
+      />
       <div class="user-info">
         <h2 class="full-name">{{ user.name }}</h2>
         <p class="username">@{{ user.username }}</p>
@@ -12,8 +16,7 @@
 
     <hr class="my-4" />
 
-    <!-- Display associated profiles as cards -->
-    <div v-if="user?.profiles && user.profiles.length > 0" class="profiles-cards-container">
+    <div v-if="user.profiles?.length" class="profiles-cards-container">
       <h3 class="profile-title">Profiles</h3>
       <div class="profiles-grid">
         <ProfileCard
@@ -31,29 +34,48 @@
       </button>
     </div>
 
+    <hr class="my-4" />
+
+    <div v-if="favouritedProfiles.length" class="favourites-section mt-8">
+      <h3 class="profile-title">Favourited Profiles</h3>
+      <div class="profiles-grid">
+        <ProfileCard
+          v-for="profile in favouritedProfiles"
+          :key="profile.profile_id"
+          :profile="profile"
+        />
+      </div>
+    </div>
+    <p v-else class="no-results">No favourites found.</p>
   </div>
+
   <div v-else>
     <p>Loading user details...</p>
   </div>
 </template>
 
-
-
 <script setup>
 import { onMounted, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRouter } from 'vue-router'
 import apiClient from '@/axios'
 import ProfileCard from '../components/ProfileCard.vue'
 
 const user = ref(null)
-const route = useRoute()
+const favouritedProfiles = ref([])
 const router = useRouter()
-const userId = Number(route.params.user_id)
 
 onMounted(async () => {
   try {
-    const response = await apiClient.get(`/api/users/${userId}`) 
-    user.value = response.data.user
+    const meRes = await apiClient.get('/api/auth/me')
+    const userId = meRes.data.id
+
+    const userRes = await apiClient.get(`/api/users/${userId}`)
+    user.value = userRes.data.user
+
+    const favRes = await apiClient.get(`/api/favourites`)
+    if (favRes.status === 200 && favRes.data.favourites) {
+      favouritedProfiles.value = favRes.data.favourites
+    }
   } catch (error) {
     console.error('Failed to load user details:', error)
   }
@@ -68,6 +90,7 @@ function goToAddProfile() {
   router.push({ name: 'AddProfile' })
 }
 </script>
+
 
 <style scoped>
 
@@ -133,7 +156,6 @@ function goToAddProfile() {
   background-color: #c7baa2;
 }
 
-
 .profiles-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
@@ -141,40 +163,3 @@ function goToAddProfile() {
 } 
 </style>
 
-<!-- //
-// import axios from 'axios';
-// import ProfileCard from '../components/ProfileCard.vue';  // Import ProfileCard component
-
-// export default {
-//   name: 'UserDetailsView',
-//   components: {
-//     ProfileCard
-//   },
-//   props: {
-//     userId: {
-//       type: Number,
-//       required: true
-//     }
-//   },
-//   data() {
-//     return {
-//       user: null
-//     };
-//   },
-//   mounted() {
-//     console.log("User ID received:", this.userId);
-//     this.fetchUser();
-//   },
-//   methods: {
-//     async fetchUser() {
-//       try {
-//         const response = await axios.get(`/api/users/${this.userId}`);
-//         console.log("API response:", response.data);
-//         this.user = response.data;
-//       } catch (error) {
-//         console.error('Failed to load user details:', error);
-//       }
-//     }
-//   }
-// };
-// </script> -->

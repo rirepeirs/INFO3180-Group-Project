@@ -75,9 +75,6 @@ def logout():
 def get_profiles():
     """Return all profiles."""
     profiles = db.session.execute(db.select(Profile)).scalars()
-    # profiles = current_user.profiles
-    # profiles = db.session.execute(db.select(Profile).
-    # filter_by(user_id_fk=current_user.id)).scalars().all()
     if profiles:
         result = [{
             'id': profile.id,
@@ -113,7 +110,7 @@ def add_profile():
         return jsonify({'error': 'User not found'}), 404
 
     data = request.get_json()
-    print("🔵 Incoming JSON keys:", list(data.keys()))  # Log field names
+    print("🔵 Incoming JSON keys:", list(data.keys())) 
     print("🔵 Incoming JSON data:", data)
     form = ProfileForm(data=data, meta={'csrf': False})
     print("🔴 Form errors:", form.errors)
@@ -138,7 +135,7 @@ def add_profile():
             )
             db.session.add(new_profile)
             db.session.commit()
-            return jsonify({'message': 'Profile created successfully'}), 201
+            return jsonify({'message': 'Profile created', 'profile_id': new_profile.id}), 201
         print("Form data:", form.data)
         print("Form errors:", form.errors)
         return jsonify({'message': 'Validation error', 'errors': form.errors}), 422  
@@ -184,7 +181,8 @@ def add_favourite(user_id):
     # # You cannot view your own profile 
     if current_user_id == user_id:
          return jsonify({'error': 'Action not allowed'}), 400
-    favourited = db.session.execute(db.select(Favourite).filter_by(user_id_fk=current_user.id, fav_user_id_fk=user_id)).scalars().first()
+    favourited = db.session.execute(
+        db.select(Favourite).filter_by(user_id_fk=current_user_id, fav_user_id_fk=user_id)).scalars().first()
     if favourited:
         return jsonify({'message': 'Already favourited'}), 200
     new_favourite = Favourite(user_id_fk=current_user_id, fav_user_id_fk=user_id)
@@ -192,42 +190,84 @@ def add_favourite(user_id):
     db.session.commit()
     return jsonify({'message': 'Added to favourites'}), 201
 
+@app.route('/api/profiles/<int:user_id>/favourite', methods=['DELETE'])
+@jwt_required()
+def remove_favourite(user_id):
+    """Remove a user from favourites."""
+    current_user_id = get_jwt_identity()
+
+    favourite = db.session.execute(
+        db.select(Favourite).filter_by(user_id_fk=current_user_id, fav_user_id_fk=user_id)
+    ).scalars().first()
+
+    if not favourite:
+        return jsonify({'error': 'Not favourited'}), 404
+
+    db.session.delete(favourite)
+    db.session.commit()
+    return jsonify({'message': 'Removed from favourites'}), 200
+
+
 @app.route('/api/profiles/matches/<int:profile_id>', methods=['GET'])
 @jwt_required()
 def get_matches(profile_id):
-    """Get a list of all profiles that match a specific criteria stated below."""
-    profile = db.session.get(Profile, profile_id)
-    if not profile:
-        return jsonify({'error': 'Profile not found'}), 404
-    matched_profiles = db.session.execute(
-        db.select(Profile).filter(
-            Profile.id != profile_id,
-            Profile.parish == profile.parish,
-            Profile.fav_cuisine == profile.fav_cuisine,
-            Profile.birth_year.between(profile.birth_year - 5, profile.birth_year + 5)
-        )
-    ).scalars().all()
-    if matched_profiles:
-        result = [{
-            'id': profile.id,
-            'user_id_fk': profile.user_id_fk,
-            'description': profile.description,
-            'parish': profile.parish,
-            'biography': profile.biography,
-            'sex': profile.sex,
-            'race': profile.race,
-            'birth_year': profile.birth_year,
-            'height': profile.height,
-            'fav_cuisine': profile.fav_cuisine,
-            'fav_colour': profile.fav_colour,
-            'fav_school_subject': profile.fav_school_subject,
-            'political': profile.political,
-            'religious': profile.religious,
-            'family_oriented': profile.family_oriented
-        } 
-        for profile in matched_profiles]
-        return jsonify(result), 200
-    return jsonify({'message': 'No matches'}), 404
+    try:
+        # Step 1: Get the requesting profile
+        profile = db.session.get(Profile, profile_id)
+        if not profile:
+            return jsonify({'error': 'Profile not found'}), 404
+
+        current_user_id = profile.user_id_fk
+
+        # Step 2: Find matching profiles, excluding the same profile and same user
+        matched_profiles = db.session.execute(
+            db.select(Profile).filter(
+                Profile.id != profile_id,
+                Profile.user_id_fk != current_user_id,
+                Profile.parish == profile.parish,
+                Profile.fav_cuisine == profile.fav_cuisine,
+                Profile.birth_year.between(profile.birth_year - 5, profile.birth_year + 5)
+            )
+        ).scalars().all()
+
+        # Step 3: Build the result
+        result = []
+        for match in matched_profiles:
+            user = db.session.get(User, match.user_id_fk)
+            result.append({
+                'id': match.id,
+                'user_id_fk': match.user_id_fk,
+                'description': match.description,
+                'parish': match.parish,
+                'biography': match.biography,
+                'sex': match.sex,
+                'race': match.race,
+                'birth_year': match.birth_year,
+                'height': match.height,
+                'fav_cuisine': match.fav_cuisine,
+                'fav_colour': match.fav_colour,
+                'fav_school_subject': match.fav_school_subject,
+                'political': match.political,
+                'religious': match.religious,
+                'family_oriented': match.family_oriented,
+                'user': {
+                    'name': user.name,
+                    'username': user.username,
+                    'email': user.email,
+                    'photo': user.photo
+                }
+            })
+
+        return jsonify(result), 200  # Even if it's empty, it's still 200 OK
+
+    except Exception as e:
+        # Catch unexpected issues and log for debugging
+        import traceback
+        traceback.print_exc()  # Optional: logs full stack trace in terminal
+        return jsonify({'error': 'An unexpected error occurred', 'details': str(e)}), 500
+
+
+
 
 @app.route('/api/search', methods=['GET'])
 @jwt_required()
@@ -238,18 +278,18 @@ def search_profiles():
     birth_year = request.args.get('birth_year')
     sex = request.args.get('sex')
     race = request.args.get('race')
-    query = db.select(Profile)
+    # query = db.select(Profile)
+    query = Profile.query
     if name:
-        query = query.filter(Profile.description.ilike(f"%{name}%"))
+        query = query.join(User).filter(User.name.ilike(f"%{name}%"))
     if birth_year:
         query = query.filter(Profile.birth_year == int(birth_year))
     if sex:
-        query = query.filter(Profile.sex.ilike(f"%{sex}%"))
+        query = query.filter(Profile.sex == sex)
     if race:
         query = query.filter(Profile.race.ilike(f"%{race}%"))
-    results = db.session.execute(query).scalars().all()
-    if results:
-        profiles_list = [{
+    results = query.all()
+    profiles_list = [{
             'id': profile.id,
             'user_id_fk': profile.user_id_fk,
             'description': profile.description,
@@ -266,8 +306,9 @@ def search_profiles():
             'religious': profile.religious,
             'family_oriented': profile.family_oriented
         } for profile in results]
-        return jsonify(profiles_list), 200
-    return jsonify({'message': 'No profiles found'}), 404
+    return jsonify(profiles_list), 200
+
+
 
 @app.route('/api/users/<int:user_id>', methods=['GET'])
 def get_user(user_id):
@@ -320,29 +361,47 @@ def get_logged_in_user():
     return jsonify({'id': user.id,'username': user.username,'email': user.email}), 200
 
 
-@app.route('/api/users/<int:user_id>/favourites', methods=['GET'])
+@app.route('/api/favourites', methods=['GET'])
 @jwt_required()
-def get_favourites(user_id):
-    """Get users that the specified user has favourited."""
+def get_favourites():
+    """Get profiles of users favourited by the current user."""
+    user_id = get_jwt_identity()
     user = db.session.get(User, user_id)
     if not user:
         return jsonify({'error': 'User not found'}), 404
 
-    favourites = user.favourites 
-    if favourites:
-        result = []
-        for fav in favourites:
-            fav_user = fav.fav_user  
-            result.append({
-                'id': fav_user.id,
-                'username': fav_user.username,
-                'name': fav_user.name,
-                'email': fav_user.email,
-                'photo': fav_user.photo
-            })
-        return jsonify({'favourites': result}), 200
+    favourites = user.favourites
+    result = []
 
-    return jsonify({'message': 'No favourites added'}), 404
+    for fav in favourites:
+        fav_user = fav.fav_user
+        profile = Profile.query.filter_by(user_id_fk=fav_user.id).first()
+
+        if profile:
+            result.append({
+                'profile_id': profile.id,
+                'user_id_fk': fav_user.id,
+                'birth_year': profile.birth_year,
+                'sex': profile.sex,
+                'race': profile.race,
+                'description': profile.description,
+                'biography': profile.biography,
+                'height': profile.height,
+                'fav_cuisine': profile.fav_cuisine,
+                'fav_colour': profile.fav_colour,
+                'fav_school_subject': profile.fav_school_subject,
+                'political': profile.political,
+                'religious': profile.religious,
+                'family_oriented': profile.family_oriented,
+                'user': {
+                    'name': fav_user.name,
+                    'username': fav_user.username,
+                    'email': fav_user.email,
+                    'photo': fav_user.photo
+                }
+            })
+
+    return jsonify({'favourites': result}), 200
 
 
 @app.route('/api/users/favourites/<int:N>', methods=['GET'])
@@ -416,4 +475,3 @@ def add_header(response):
 def page_not_found(error):
     """Custom 404 page."""
     return jsonify({'error': 'Not found'}), 404
-    #return render_template('404.html'), 404

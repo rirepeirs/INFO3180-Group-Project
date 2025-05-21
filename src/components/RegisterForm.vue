@@ -53,18 +53,16 @@ export default {
       email: '',
       password: '',
       name: '',
-      photo: null,  // Store the selected photo
+      photo: null, 
       errors: []
     }
   },
   methods: {
-    // Handle file input and store the file in `photo`
     handlePhotoUpload(event) {
       this.photo = event.target.files[0]
     },
 
     async registerUser() {
-      // Prepare form data
       const formData = new FormData()
       formData.append('username', this.username)
       formData.append('email', this.email)
@@ -79,7 +77,6 @@ export default {
           }
         })
 
-        // On success, redirect to login or home
         this.$router.push('/login')
       } catch (err) {
         const data = err.response?.data

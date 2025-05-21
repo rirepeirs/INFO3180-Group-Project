@@ -1,32 +1,61 @@
 <template>
-    <div class="profile-card">
-      <img v-if="profile.user && profile.user.photo" :src="`http://localhost:8080/uploads/${profile.user.photo}`" alt="Profile photo" class="profile-photo"/>
-  
-      <div class="profile-info">
-        <h4 class="profile-name">{{ profile.name }}</h4>
-        <p class="profile-birthyear">{{ profile.birth_year }}</p>
-      </div>
-  
-      <button @click="viewProfile(profile.profile_id)">View Details</button>
+  <div class="profile-card">
+    <img 
+      :src="getPhotoUrl" 
+      alt="Profile photo" 
+      class="profile-photo" 
+    />
+    <div class="profile-info">
+      <h4 class="profile-name">{{ displayName }}</h4>
+      <p class="profile-birthyear" v-if="profile.birth_year">
+        {{ profile.birth_year }}
+      </p>
     </div>
-  </template>
-  
-  <script>
-  export default {
-    name: 'ProfileCard',
-    props: {
-      profile: {
-        type: Object,
-        required: true
-      }
+
+    <button v-if="hasProfileId" @click="viewProfile">
+      View Details
+    </button>
+  </div>
+</template>
+
+<script>
+export default {
+  name: 'ProfileCard',
+  props: {
+    profile: {
+      type: Object,
+      required: true
     },
-    methods: {
-      viewProfile(profile_id) {
-        this.$router.push(`/profiles/${profile_id}`); 
+    defaultImage: {
+      type: String,
+      default: '/static/default-profile.png'
+    }
+  },
+  computed: {
+    displayName() {
+      return this.profile?.user?.name || this.profile.name || 'Unknown Name';
+    },
+    getPhotoUrl() {
+      const photo = this.profile?.user?.photo || this.profile.photo;
+      return photo ? `http://localhost:8080/uploads/${photo}` : this.defaultImage;
+    },
+    hasProfileId() {
+      return this.profile?.profile_id || this.profile?.id;
+    }
+  },
+  methods: {
+    viewProfile() {
+      const pid = this.profile?.profile_id || this.profile?.id;
+      if (pid) {
+        this.$router.push(`/profiles/${pid}`);
+      } else {
+        console.error('Missing profile ID:', this.profile);
       }
     }
-  };
-  </script>
+  }
+};
+</script>
+
   
   <style scoped>
   .profile-card {
@@ -82,4 +111,13 @@
   button:hover {
     background-color: #45a049;
   }
+
+/*   
+.email-btn {
+  background-color: #5a86a0;
+}
+
+.email-btn:hover {
+  background-color: #87b2cb;
+} */
   </style>

@@ -24,7 +24,7 @@
               <RouterLink to="/about" class="nav-link" :class="{ active: $route.path === '/about' }">About</RouterLink>
             </li>
 
-            <!-- Additional navigation items for logged-in users -->
+            <!--navigation items for logged-in users -->
             <template v-if="isLoggedIn">
               <li class="nav-item">
                 <RouterLink to="/search" class="nav-link" :class="{ active: $route.path === '/search' }">Search</RouterLink>
@@ -37,8 +37,8 @@
                   Reports
                 </a>
                 <ul class="dropdown-menu" aria-labelledby="reportsDropdown">
-                  <li><RouterLink to="/profiles/favourites" class="dropdown-item">My Favourites</RouterLink></li>
-                  <li><RouterLink to="/profiles/favoured" class="dropdown-item">Most Favoured Users</RouterLink></li>
+                  <li><RouterLink to="/profiles/yourfavourites" class="dropdown-item">My Favourites</RouterLink></li>
+                  <li><RouterLink to="/top-favoured" class="dropdown-item">Most Favoured Users</RouterLink></li>
                 </ul>
               </li>
             </template>

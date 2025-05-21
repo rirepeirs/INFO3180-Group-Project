@@ -7,6 +7,8 @@ import ProfileDetailsView from '@/views/ProfileDetailsView.vue';
 import AddProfileView from '@/views/AddProfileView.vue';
 import FavouritesView from '@/views/FavouritesView.vue';
 import SearchView from '@/views/SearchView.vue';
+import TopFavouredView from '@/views/TopFavouredView.vue';
+import MatchesView from '@/views/MatchesView.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -59,7 +61,17 @@ const router = createRouter({
       path: '/search',
       name: 'Search',
       component: SearchView
-    }   
+    },
+    {
+      path: '/top-favoured',
+      name: 'TopFavoured',
+      component: TopFavouredView
+    },
+    {
+      path: '/matches-report',
+      name: 'MatchesView',
+      component: MatchesView
+    }      
   ]
 })
 

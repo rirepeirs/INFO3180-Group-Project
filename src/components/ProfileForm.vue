@@ -151,7 +151,8 @@
     Object.keys(profile).forEach(key => {
       profile[key] = typeof profile[key] === 'boolean' ? false : '';
     });
-    router.push('/profiles/${profile_id}');
+    router.push(`/profiles/${response.data.profile_id}`);
+
   } catch (err) {
     console.error("Server response:", err.response?.data);
     
